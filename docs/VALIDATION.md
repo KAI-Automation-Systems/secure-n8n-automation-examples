@@ -11,7 +11,7 @@ Date: 1 November 2026. This records observed checks, not a production-readiness 
 
 ## Separate n8n runtime gate
 
-Workflow JSON uses native Webhook, Code, HTTP Request and Respond to Webhook nodes. Target for import validation: n8n 2.45.7. Native n8n installation/import is checked separately from the JavaScript tests; its final result must be recorded here before claiming a runtime import or full workflow execution.
+Workflow JSON uses native Webhook, Code, HTTP Request and Respond to Webhook nodes. Target for import validation: n8n 2.45.7. A native import attempt could not initialise the isolated local database because the sqlite3 install script was blocked by the package manager. Further runtime validation was stopped at the request of the portfolio owner. No successful native import or full workflow execution is claimed.
 
 Neither a structural graph check nor execution of a Code-node script proves a complete live n8n workflow. No authenticated live webhook-to-model-to-client delivery is claimed. The examples deliberately have no client delivery action.
 
