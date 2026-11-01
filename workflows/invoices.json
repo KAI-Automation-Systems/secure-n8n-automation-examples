@@ -1,0 +1,140 @@
+{
+  "name": "KAI Demo | invoices",
+  "active": false,
+  "nodes": [
+    {
+      "id": "5c712a6e-a2ce-5480-937f-efc6009c03af",
+      "name": "Authenticated request",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "kai-demo-invoices",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "268a8efc-7e5b-59b3-b3c8-de6b8024c078",
+      "name": "Allowlisted payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const p = $input.first().json.body;\nconst fields = [\"event_id\", \"supplier_ref\", \"invoice_ref\", \"currency\", \"net\", \"tax\", \"gross\"];\nif (!p || typeof p !== 'object' || Array.isArray(p) ||\n    Object.keys(p).sort().join(',') !== [...fields].sort().join(',')) {\n  throw new Error('Invalid request fields');\n}\n// Drop request headers, webhook metadata and credentials immediately.\n// Authoritative value validation and all state transitions live in the gateway.\nreturn [{json: Object.fromEntries(fields.map(k => [k, p[k]]))}];"
+      }
+    },
+    {
+      "id": "375fe414-40e5-58ae-971f-6c0a7d684cb9",
+      "name": "Submit for review",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        520,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:8080/v1/invoices",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "timeout": 20000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "d9211210-cd7b-504b-88d2-bd837ade9224",
+      "name": "Return status",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        780,
+        0
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.body }}",
+        "options": {
+          "responseCode": "={{ $json.statusCode }}",
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Cache-Control",
+                "value": "no-store"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Authenticated request": {
+      "main": [
+        [
+          {
+            "node": "Allowlisted payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Allowlisted payload": {
+      "main": [
+        [
+          {
+            "node": "Submit for review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Submit for review": {
+      "main": [
+        [
+          {
+            "node": "Return status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "saveManualExecutions": false,
+    "saveExecutionProgress": false,
+    "executionTimeout": 30
+  },
+  "pinData": {},
+  "tags": []
+}

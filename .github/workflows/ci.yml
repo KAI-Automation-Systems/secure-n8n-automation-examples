@@ -1,0 +1,22 @@
+name: Verify examples
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Python domain and HTTP security tests
+        run: python3 -m unittest discover -v
+      - name: Verify reproducible workflow exports
+        run: |
+          python3 scripts/build_workflows.py
+          git diff --exit-code -- workflows
+      - name: Execute workflow JavaScript and validate graph
+        run: node --test tests/workflows.test.mjs
+      - name: Run synthetic offline demo
+        run: python3 -m automation.demo
